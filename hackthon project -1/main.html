@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Farmer Advisor — Web</title>
+
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="frontend/style.css">
+
+</head>
+
+<body>
+
+  <!-- Background images: put bg1.jpg and bg2.jpg in same folder -->
+  <div id="bg1" class="background-image active" style="background-image:url('images/image2.jpg')"></div>
+  <div id="bg2" class="background-image" style="background-image:url('images/farming.png.jpg')"></div>
+
+  <header>
+    <div class="branding">
+      <img src="images/logo.png" alt=""
+        style="width:80px;height:80px;border-radius:50%;background:#fff9;box-shadow: 0 1px 3px black;" />
+      <h1>Digital Krishi</h1>
+    </div>
+
+    <div class="search-box">
+      <button class="header-btn" id="searchBtn">🔔</button>
+      <!-- In your header inside .search-box -->
+      <select id="langSelect" class="header-btn" onchange="changeLanguage(this.value)">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="ml">മലയാളം</option>
+        <option value="ta">தமிழ்</option>
+        <option value="te">తెలుగు</option>
+        <option value="kn">ಕನ್ನಡ</option>
+      </select>
+      <select id="profileMenu" class="header-btn" onchange="handleProfileMenu(this.value)">
+        <option value="">Profile</option>
+        <option value="signout">Sign Out</option>
+        <option value="settings">Settings</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <button onclick="showTab('dashboard', this)"> Dashboard</button>
+      <button onclick="showTab('queries', this)"> Queries</button>
+      <button onclick="showTab('solutions', this)">Solutions</button>
+      <button onclick="showTab('community', this)"> Community</button>
+      <button onclick="showTab('expert', this)"> Expert Connect</button>
+      <button onclick="showTab('settings', this)"> Settings</button>
+    </aside>
+
+    <main class="main">
+      <!-- DASHBOARD -->
+      <div id="dashboard" class="tab card">
+        <h2>Dashboard</h2>
+
+        <div class="grid" style="margin-top:12px;">
+          <!-- Weather -->
+          <!-- Weather -->
+          <div class="card" style="box-shadow:0 1px 4px #000000;">
+            <h3>🌦 Live Weather Advisory</h3>
+            <div id="weatherCard" class="small">Loading weather...</div>
+
+            <!-- Map container -->
+            <div id="weatherMap" style="height: 200px; margin-top: 10px; border-radius: 8px;"></div>
+
+            <div style="margin-top:10px;text-align: center;height: 50px;width:auto;">
+              <button class="btn" onclick="fetchWeather()" style="height: 50px;">Refresh Weather</button>
+            </div>
+          </div>
+
+
+          <!-- Soil & Fertilizer -->
+          <div class="card" style="box-shadow:0 1px 4px #000000;">
+            <h3>🌾 Soil Health & Fertilizer</h3>
+            <p class="small">Enter soil pH / NPK to get fertilizer recommendation.</p>
+            <div class="row" style="margin-top:8px;display: grid;grid-column: auto;">
+              <input id="soilPH" placeholder="pH (e.g., 6.5)"
+                style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+              <input id="soilNPK" placeholder="N,P,K values (e.g., 30,20,15)"
+                style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+            </div>
+            <div style="margin-top:10px;text-align: center;height: 50px;width:auto;">
+              <button class="btn" onclick="recommendFertilizer()" style="height: 50px;">Get Recommendation</button>
+            </div>
+            <div id="fertResult" class="small" style="margin-top:8px"></div>
+          </div>
+
+          <!-- Govt Schemes -->
+          <div class="card" style="box-shadow:0 1px 4px #000000;">
+            <h3>💰 Govt Schemes & Subsidies</h3>
+            <p class="small" id="schemeInfo">No scheme loaded. Press refresh for demo.</p>
+            <div style="margin-top:10px;text-align: center;height: 50px;width:auto;">
+              <a href="https://agriwelfare.gov.in/"><button class="btn" onclick="fetchSchemeDemo()"
+                  style="height: 50px;">Fetch Schemes</button></a>
+            </div>
+          </div>
+
+          <!-- Expense & Profit Tracker -->
+          <div class="card" style="box-shadow:0 1px 4px #000000;">
+            <h3>📈 Expense & Profit Tracker</h3>
+            <p class="small">Track expenses and income to estimate profit.</p>
+            <div class="row" style="margin-top:8px;display: grid;grid-column: auto;">
+              <input id="expDesc" placeholder="Desc" style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+              <input id="expAmount" placeholder="Amount" style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+            </div>
+            <div style="margin-top:8px; text-align: center; height: 50px; width:auto; ">
+              <button class="btn" onclick="saveExpense()" style="height: 50px; width:70px;">Add</button>
+              <button class="secondary" onclick="clearExpenses()" style="height: 50px; width:70px;">Clear</button>
+            </div>
+            <div id="expenseList" class="small" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUERIES -->
+      <div id="queries" class="tab" style="display:none;">
+        <div class="card">
+          <h2>Queries</h2>
+          <p class="small">Ask the AI (text, voice). Offline fallback shown as SMS hint.</p>
+
+          <div style="margin-top:12px">
+            <input id="queryText" placeholder="Type your question..."
+              style="padding:10px;border-radius:8px;border:1px solid #ddd;width:70%" />
+            <button class="btn" onclick="submitQuery()">Ask</button>
+            <button class="secondary" id="voiceBtn">🎙 Start voice</button>
+            <input id="queryImage" type="file" accept="image/*" onchange="handleQueryImage(event)" />
+          </div>
+
+          <div id="queryResponses" style="margin-top:14px"></div>
+
+          <div style="margin-top:10px" class="small">
+            <p><b>Offline fallback:</b> If network is weak, system can send advisory via SMS/WhatsApp (requires backend
+              integration).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOLUTIONS -->
+      <div id="solutions" class="tab" style="display:none;">
+        <div class="card">
+          <h2>Solutions Hub</h2>
+          <p class="small">Actionable steps with explainability & urgency</p>
+
+          <div style="margin-top:12px" id="solutionsList">
+            <!-- Example cards -->
+            <div class="card urgent" style="margin-bottom:10px">
+              <h3>Install Drip Irrigation System</h3>
+              <p class="small">Why: Water scarcity detected in your region. Steps: Set up drip lines to conserve water
+                and improve yield.</p>
+              <p class="small"><i>Explainability:</i> Local weather data shows reduced rainfall; drip irrigation reduces
+                water usage by up to 50%.</p>
+            </div>
+
+            <div class="card warning" style="margin-bottom:10px">
+              <h3>Monitor for Fungal Diseases</h3>
+              <p class="small">Why: Humidity levels are high, increasing risk of fungal infections. Steps: Apply
+                recommended fungicides and improve field drainage.</p>
+              <p class="small"><i>Explainability:</i> High humidity and stagnant water create ideal conditions for
+                fungal growth.</p>
+            </div>
+
+            <div class="card safe" style="margin-bottom:10px">
+              <h3>Crop Rotation Planning</h3>
+              <p class="small">Plan crop rotation to improve soil fertility and reduce pest buildup. Suggested rotation:
+                legumes after cereals.</p>
+              <p class="small"><i>Explainability:</i> Crop rotation breaks pest cycles and replenishes nitrogen in soil.
+              </p>
+            </div>
+
+            <div class="card urgent" style="margin-bottom:10px">
+              <h3>Protect Against Early Frost</h3>
+              <p class="small">Why: Frost warning issued for your area. Steps: Cover sensitive crops with frost cloth or
+                plastic sheets overnight.</p>
+              <p class="small"><i>Explainability:</i> Frost damages young plants; protective covers reduce exposure to
+                cold.</p>
+            </div>
+
+            <div class="card warning" style="margin-bottom:10px">
+              <h3>Optimize Fertilizer Application Timing</h3>
+              <p class="small">Why: Soil tests indicate nutrient availability varies by time of day. Steps: Apply
+                fertilizers early morning or late afternoon.</p>
+              <p class="small"><i>Explainability:</i> Reduced evaporation and better nutrient uptake during cooler parts
+                of the day.</p>
+            </div>
+
+            <div class="card safe" style="margin-bottom:10px">
+              <h3>Encourage Beneficial Insects</h3>
+              <p class="small">Plant flowering cover crops to attract pollinators and natural pest predators.</p>
+              <p class="small"><i>Explainability:</i> Beneficial insects reduce pest populations and improve
+                pollination.</p>
+            </div>
+            <div class="card urgent" style="margin-bottom:10px">
+              <h3>Spray Neem Oil for Pest Control</h3>
+              <p class="small">Why: pest identified on leaf image. Steps: Mix 30ml neem oil per litre, spray evening.
+              </p>
+              <p class="small"><i>Explainability:</i> pest pattern matched morphological features in database.
+              </p>
+            </div>
+
+            <div class="card warning" style="margin-bottom:10px">
+              <h3>Fertilizer Advisory</h3>
+              <p class="small">Why: Nitrogen deficiency signs. Steps: Apply 25kg urea/acre; repeat after 15 days if
+                required.</p>
+              <p class="small"><i>Explainability:</i> leaf colour, slow growth & soil sample suggest N-low.</p>
+            </div>
+
+            <div class="card safe">
+              <h3>Soil Health Check</h3>
+              <p class="small">Schedule soil testing. Subsidy link.</p>
+            </div>
+            <div class="card urgent" style="margin-bottom:10px">
+              <h3>Immediate Pest Trap Deployment</h3>
+              <p class="small">Why: Early signs of pest infestation detected. Steps: Deploy pheromone traps around the
+                field to monitor and reduce pest population.</p>
+              <p class="small"><i>Explainability:</i> Pheromone traps attract specific pests, reducing their numbers
+                without chemicals.</p>
+            </div>
+
+            <div class="card warning" style="margin-bottom:10px">
+              <h3>Soil Moisture Monitoring</h3>
+              <p class="small">Why: Soil moisture levels are fluctuating. Steps: Use soil moisture sensors to optimize
+                irrigation scheduling.</p>
+              <p class="small"><i>Explainability:</i> Maintaining optimal soil moisture improves crop health and water
+                efficiency.</p>
+            </div>
+
+            <div class="card safe" style="margin-bottom:10px">
+              <h3>Organic Mulching</h3>
+              <p class="small">Apply organic mulch to conserve soil moisture, suppress weeds, and improve soil
+                fertility.</p>
+              <p class="small"><i>Explainability:</i> Mulching reduces evaporation and adds organic matter as it
+                decomposes.</p>
+            </div>
+
+            <div class="card urgent" style="margin-bottom:10px">
+              <h3>Protect Seedlings from Birds</h3>
+              <p class="small">Why: Bird activity increasing near fields. Steps: Use bird netting or scare devices to
+                protect young plants.</p>
+              <p class="small"><i>Explainability:</i> Birds can damage seedlings causing yield loss; physical barriers
+                reduce damage.</p>
+            </div>
+
+            <div class="card warning" style="margin-bottom:10px">
+              <h3>Balanced Micronutrient Application</h3>
+              <p class="small">Why: Leaf analysis shows micronutrient deficiencies. Steps: Apply zinc, boron, or iron
+                foliar sprays as recommended.</p>
+              <p class="small"><i>Explainability:</i> Micronutrients are essential for plant growth and disease
+                resistance.</p>
+            </div>
+
+            <div class="card safe" style="margin-bottom:10px">
+              <h3>Encourage Soil Microbial Activity</h3>
+              <p class="small">Add compost or biofertilizers to enhance beneficial soil microbes for better nutrient
+                cycling.</p>
+              <p class="small"><i>Explainability:</i> Healthy microbial populations improve soil structure and nutrient
+                availability.</p>
+            </div>
+
+            <div class="card urgent" style="margin-bottom:10px">
+              <h3>Flood Risk Mitigation</h3>
+              <p class="small">Why: Heavy rains forecasted. Steps: Create drainage channels and elevate seedbeds to
+                prevent waterlogging.</p>
+              <p class="small"><i>Explainability:</i> Proper drainage prevents root rot and crop loss during floods.</p>
+            </div>
+
+            <div class="card warning" style="margin-bottom:10px">
+              <h3>Monitor for Nutrient Leaching</h3>
+              <p class="small">Why: Excessive rainfall may cause nutrient loss. Steps: Apply slow-release fertilizers
+                and maintain ground cover.</p>
+              <p class="small"><i>Explainability:</i> Slow-release fertilizers reduce nutrient runoff and improve uptake
+                efficiency.</p>
+            </div>
+
+            <div class="card safe" style="margin-bottom:10px">
+              <h3>Promote Pollinator Habitat</h3>
+              <p class="small">Plant native flowering plants around fields to support bees and other pollinators.</p>
+              <p class="small"><i>Explainability:</i> Pollinators increase fruit set and crop yields.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COMMUNITY -->
+      <div id="community" class="tab" style="display:none;">
+        <div class="card">
+          <h2>Community</h2>
+          <p class="small">Farmer-to-farmer help, success stories, votes</p>
+
+          <div style="margin-top:12px">
+            <textarea id="communityPost" placeholder="Share a tip or success story..."
+              style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd"></textarea>
+            <div style="margin-top:8px">
+              <button class="btn" onclick="postCommunity()">Post</button>
+              <button class="secondary" onclick="loadCommunity()">Refresh</button>
+            </div>
+
+            <div id="communityFeed" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPERT CONNECT -->
+      <div id="expert" class="tab" style="display:none;">
+        <div class="card">
+          <h2>Expert Connect</h2>
+          <p class="small">If AI isn't enough, connect with an agronomy expert (contact form).</p>
+          <div style="margin-top:12px" class="row">
+            <input id="expertName" placeholder="Your name"
+              style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+            <input id="expertPhone" placeholder="Phone / WhatsApp"
+              style="padding:8px;border-radius:6px;border:1px solid #ddd" />
+          </div>
+          <div style="margin-top:8px">
+            <textarea id="expertQuery" placeholder="Describe the issue..."
+              style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd"></textarea>
+            <div style="margin-top:8px">
+              <button class="btn" onclick="requestExpert()">Request Expert</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- SETTINGS -->
+      <div id="settings" class="tab" style="display:none;">
+        <div class="card">
+          <h2>Settings</h2>
+          <p class="small">Notifications, language and accessibility</p>
+          <div style="margin-top:10px" class="row">
+            <label>Notifications via: </label>
+            <select id="notifyMethod">
+              <option>In-app</option>
+              <option>SMS (requires backend)</option>
+              <option>WhatsApp (requires backend)</option>
+            </select>
+            <button class="btn" onclick="saveSettings()">Save</button>
+          </div>
+          <div style="margin-top: 10px;" class="row">
+            <label for="darkModeToggle">Dark Mode:</label>
+            <input type="checkbox" id="darkModeToggle" />
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Floating chat button -->
+  <button class="chatbot-btn" onclick="toggleChat()" title="Open chat">💬</button>
+
+  <!-- Chatbot window -->
+  <div class="chatbot-window" id="chatWindow" role="dialog" aria-label="AI Chatbot">
+    <div class="chat-header">AI Chatbot</div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="bot-message">Hello! How can I help with your farming today?</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="chatInput" placeholder="Type your question..." aria-label="Chat input" />
+      <button onclick="sendMessage()">➤</button>
+      <button id="startVoiceBtn">🎙</button>
+      <input id="chatImg" type="file" accept="image/*" onchange="handleChatImage(event)" style="display:none" />
+    </div>
+  </div>
+</body>
+<script>/* -------------------------
+/* -------------------------
+Configuration & constants
+------------------------- */
+
+  const API_KEY = "AIzaSyBhGnO2Rn3134IQjL12SVUBfFYdPGf5Vig";
+
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+  const BG_FADE_INTERVAL = 9000;
+
+
+  /* -------------------------
+    Background fade logic
+  ------------------------- */
+  const bg1 = document.getElementById('bg1');
+  const bg2 = document.getElementById('bg2');
+  let bgToggle = true;
+  setInterval(() => {
+    bgToggle = !bgToggle;
+    bg1.classList.toggle('active', bgToggle);
+    bg2.classList.toggle('active', !bgToggle);
+  }, BG_FADE_INTERVAL);
+
+  /* -------------------------
+    Tab navigation
+  ------------------------- */
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+
+    document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+  }
+  function handleProfileMenu(value) {
+    if (!value) return; // do nothing if default option
+
+    if (value === 'signout') {
+      // Redirect to signin.html
+      window.location.href = 'signin.html';
+    } else if (value === 'settings') {
+      // Show the settings tab
+      showTab('settings');
+    }
+
+    // Reset dropdown to default after action
+    document.getElementById('profileMenu').value = '';
+  }
+
+  /* -------------------------
+    Chatbot & LLM integration
+  ------------------------- */
+  function toggleChat() {
+        const w = document.getElementById('chatWindow');
+        if (w.classList.contains('active')) {
+            w.classList.remove('active');
+        } else {
+            w.classList.add('active');
+            document.getElementById('chatInput').focus();
+        }
+    }
+    
+    // Make the chat window draggable
+    const chatWindow = document.getElementById('chatWindow');
+    const chatHeader = document.querySelector('.chat-header');
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    function startDrag(e) {
+        isDragging = true;
+        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        offsetX = clientX - chatWindow.offsetLeft;
+        offsetY = clientY - chatWindow.offsetTop;
+        chatWindow.style.transition = 'none';
+    }
+
+    function onDrag(e) {
+        if (!isDragging) return;
+        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        chatWindow.style.left = `${clientX - offsetX}px`;
+        chatWindow.style.top = `${clientY - offsetY}px`;
+    }
+
+    function endDrag() {
+        isDragging = false;
+        chatWindow.style.transition = 'opacity 0.3s ease';
+    }
+
+    chatHeader.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    chatHeader.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', onDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+
+    function appendMessage(text, who = 'bot') {
+        const container = document.getElementById('chatMessages');
+        const p = document.createElement('div');
+        p.className = who === 'bot' ? 'bot-message' : 'user-message';
+        p.innerHTML = text;
+        container.appendChild(p);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Helper to call the Gemini API with a given prompt
+    async function callGeminiAPI(prompt, systemInstruction = null) {
+        let payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+        };
+        // Use Google Search grounding for general questions
+        if (!systemInstruction) {
+             payload.tools = [{ "google_search": {} }];
+        }
+        if (systemInstruction) {
+            payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+        }
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error("API error:", error);
+                return `Error contacting AI: ${JSON.stringify(error)}`;
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                return candidate.content.parts[0].text;
+            } else {
+                console.error("Unexpected API response structure:", result);
+                return "I couldn't generate a response. Please try again.";
+            }
+
+        } catch (e) {
+            console.error(e);
+            return `Error contacting AI: ${e.message}`;
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        appendMessage(`<b>You:</b> ${escapeHtml(text)}`, 'user');
+        input.value = '';
+        appendMessage('Bot is typing...', 'bot');
+
+        const reply = await callGeminiAPI(text);
+        
+        const msgs = document.querySelectorAll('#chatMessages .bot-message');
+        if (msgs.length) msgs[msgs.length - 1].remove();
+        appendMessage(`<b>Bot:</b> ${escapeHtml(reply)}`, 'bot');
+    }
+
+    // Fix Enter key for chat input
+    document.getElementById('chatInput').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+    
+
+  /* -------------------------
+    Voice recognition (Chat + Queries)
+  ------------------------- */
+  let recognition;
+
+  // init if supported
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+
+    // generic handler (we’ll set active target before start)
+    let activeTarget = null;
+    let submitFn = null;
+
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      if (activeTarget) activeTarget.value = transcript;
+      if (submitFn) submitFn();
+    };
+    recognition.onend = () => {
+      if (activeTarget && activeTarget.id === "chatInput") {
+        document.getElementById('startVoiceBtn').textContent = '🎙';
+      }
+      if (activeTarget && activeTarget.id === "queryText") {
+        document.getElementById('voiceBtn').textContent = '🎙 Start voice';
+      }
+    };
+
+    // Chatbot mic
+    const startVoiceBtn = document.getElementById('startVoiceBtn');
+    startVoiceBtn.onclick = () => {
+      try {
+        activeTarget = document.getElementById('chatInput');
+        submitFn = sendMessage;
+        recognition.start();
+        startVoiceBtn.textContent = '⏺';
+      } catch (err) {
+        console.warn(err);
+      }
+    };
+
+    // Queries mic
+    const voiceBtn = document.getElementById('voiceBtn');
+    voiceBtn.onclick = () => {
+      try {
+        activeTarget = document.getElementById('queryText');
+        submitFn = submitQuery;
+        recognition.start();
+        voiceBtn.textContent = '⏺ Listening...';
+      } catch (err) {
+        console.warn(err);
+      }
+    };
+
+  } else {
+    // hide buttons if not supported
+    document.getElementById('startVoiceBtn').style.display = 'none';
+    document.getElementById('voiceBtn').style.display = 'none';
+  }
+
+
+  /* -------------------------
+    Chat image upload
+  ------------------------- */
+  function handleChatImage(ev) {
+    const f = ev.target.files[0];
+    if (!f) return;
+    appendMessage(`<b>You sent an image:</b> ${escapeHtml(f.name)}`, 'user');
+    appendMessage(`<b>Bot:</b> Processing image...`, 'bot');
+
+    setTimeout(() => {
+      const msgs = document.querySelectorAll('#chatMessages .bot-message');
+      msgs[msgs.length - 1].remove();
+      appendMessage(`<b>Bot:</b> Detected Early Blight. Recommendation: remove infected leaves, apply copper spray.`, 'bot');
+    }, 1200);
+  }
+
+  /* -------------------------
+    Fertilizer recommendation
+  ------------------------- */
+  function recommendFertilizer() {
+    const ph = parseFloat(document.getElementById('soilPH').value || '0');
+    const npk = document.getElementById('soilNPK').value || '';
+    const out = document.getElementById('fertResult');
+    if (!ph || !npk) { out.innerText = 'Please enter pH and NPK values.'; return; }
+    let rec = '';
+    if (ph < 5.5) rec = 'Soil acidic: apply lime and organic compost; reduce urea.';
+    else if (ph > 7.5) rec = 'Soil alkaline: consider elemental sulphur and zinc if deficient.';
+    else rec = `pH OK: For NPK ${npk} — apply split nitrogen dose and basal P & K.`;
+    out.innerHTML = `<b>Recommendation:</b> ${rec}`;
+  }
+
+  /* -------------------------
+    Util
+  ------------------------- */
+  function escapeHtml(s) {
+    return ('' + s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* -------------------------
+    Language Translations
+  ------------------------- */
+  const translations = {
+    en: {
+      dashboard: "Dashboard",
+      queries: "Queries",
+      solutions: "Solutions",
+      community: "Community",
+      expert: "Expert Connect",
+      profile: "Profile",
+      settings: "Settings",
+      chatbot: "AI Chatbot — Voice & Image",
+      hello: "Hello! How can I help with your farming today?",
+      soil: "🌾 Soil Health & Fertilizer",
+      govt: "💰 Govt Schemes & Subsidies",
+      weather: "🌦 Live Weather Advisory"
+    },
+    hi: {
+      dashboard: "डैशबोर्ड",
+      queries: "प्रश्न",
+      solutions: "समाधान",
+      community: "समुदाय",
+      expert: "विशेषज्ञ से जुड़ें",
+      profile: "प्रोफ़ाइल",
+      settings: "सेटिंग्स",
+      chatbot: "एआई चैटबॉट — वॉयस और इमेज",
+      hello: "नमस्ते! खेती में आपकी कैसे मदद कर सकता हूँ?",
+      soil: "🌾 मिट्टी की सेहत और खाद",
+      govt: "💰 सरकारी योजनाएँ और सब्सिडी",
+      weather: "🌦 लाइव मौसम सलाह"
+    },
+    ml: {
+      dashboard: "ഡാഷ്‌ബോർഡ്",
+      queries: "ചോദ്യങ്ങൾ",
+      solutions: "പരിഹാരങ്ങൾ",
+      community: "കമ്മ്യൂണിറ്റി",
+      expert: "വിദഗ്ധ ബന്ധം",
+      profile: "പ്രൊഫൈൽ",
+      settings: "ക്രമീകരണങ്ങൾ",
+      chatbot: "എഐ ചാറ്റ്‌ബോട്ട് — ശബ്ദവും ചിത്രവും",
+      hello: "നമസ്കാരം! നിങ്ങളുടെ കൃഷിക്ക് എങ്ങനെ സഹായിക്കാം?",
+      soil: "🌾 മണ്ണിന്റെ ആരോഗ്യം & വളം",
+      govt: "💰 സർക്കാർ പദ്ധതികൾ & സബ്സിഡി",
+      weather: "🌦 തത്സമയ കാലാവസ്ഥാ ഉപദേശം"
+    },
+    ta: {
+      dashboard: "டாஷ்போர்டு",
+      queries: "கேள்விகள்",
+      solutions: "தீர்வுகள்",
+      community: "சமூகம்",
+      expert: "நிபுணர் தொடர்பு",
+      profile: "சுயவிவரம்",
+      settings: "அமைப்புகள்",
+      chatbot: "ஏஐ அரட்டை — குரல் & படம்",
+      hello: "வணக்கம்! விவசாயத்தில் எப்படி உதவலாம்?",
+      soil: "🌾 மண்ணின் ஆரோக்கியம் & உரம்",
+      govt: "💰 அரசு திட்டங்கள் & மானியங்கள்",
+      weather: "🌦 நேரடி வானிலை ஆலோசனை"
+    },
+    te: {
+      dashboard: "డాష్‌బోర్డ్",
+      queries: "ప్రశ్నలు",
+      solutions: "పరిష్కారాలు",
+      community: "సమాజం",
+      expert: "నిపుణుడు కనెక్ట్",
+      profile: "ప్రొఫైల్",
+      settings: "సెట్టింగ్స్",
+      chatbot: "ఏఐ చాట్‌బాట్ — వాయిస్ & ఇమేజ్",
+      hello: "హలో! మీ వ్యవసాయానికి ఎలా సహాయం చేయగలను?",
+      soil: "🌾 నేల ఆరోగ్యం & ఎరువులు",
+      govt: "💰 ప్రభుత్వ పథకాలు & సబ్సిడీలు",
+      weather: "🌦 లైవ్ వాతావరణ సూచన"
+    },
+    kn: {
+      dashboard: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+      queries: "ಪ್ರಶ್ನೆಗಳು",
+      solutions: "ಪರಿಹಾರಗಳು",
+      community: "ಸಮುದಾಯ",
+      expert: "ತಜ್ಞ ಸಂಪರ್ಕ",
+      profile: "ಪ್ರೊಫೈಲ್",
+      settings: "ಸೆಟ್ಟಿಂಗ್ಸ್",
+      chatbot: "ಎಐ ಚಾಟ್‌ಬಾಟ್ — ಧ್ವನಿ & ಚಿತ್ರ",
+      hello: "ನಮಸ್ಕಾರ! ಕೃಷಿಯಲ್ಲಿ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?",
+      soil: "🌾 ಮಣ್ಣಿನ ಆರೋಗ್ಯ & ರಸಗೊಬ್ಬರ",
+      govt: "💰 ಸರ್ಕಾರದ ಯೋಜನೆಗಳು & ಸಹಾಯಧನ",
+      weather: "🌦 ನೇರ ಹವಾಮಾನ ಸಲಹೆ"
+    }
+  };
+
+  /* -------------------------
+    Change language function
+  ------------------------- */
+  function changeLanguage(lang) {
+    const t = translations[lang];
+    if (!t) return;
+
+    currentLang = lang; // update global
+
+    // Sidebar buttons
+    document.querySelector("button[onclick*='dashboard']").innerText = t.dashboard;
+    document.querySelector("button[onclick*='queries']").innerText = t.queries;
+    document.querySelector("button[onclick*='solutions']").innerText = t.solutions;
+    document.querySelector("button[onclick*='community']").innerText = t.community;
+    document.querySelector("button[onclick*='expert']").innerText = t.expert;
+    document.querySelector("button[onclick*='settings']").innerText = t.settings;
+
+    // Chatbot header
+    document.querySelector(".chat-header").innerText = t.chatbot;
+
+    // Chatbot initial greeting (replace first bot message if it exists)
+    const firstBotMsg = document.querySelector("#chatMessages .bot-message");
+    if (firstBotMsg) firstBotMsg.innerText = t.hello;
+
+    // Cards and other static UI text
+    document.querySelector("#dashboard h2").innerText = t.dashboard;
+    document.querySelector("#dashboard h3:nth-of-type(1)").innerText = t.weather;
+    document.querySelector("#dashboard h3:nth-of-type(2)").innerText = t.soil;
+    document.querySelector("#dashboard h3:nth-of-type(3)").innerText = t.govt;
+
+    // Update Queries and Solutions tab headings
+    document.querySelector("#queries h2").innerText = t.queries;
+    document.querySelector("#solutions h2").innerText = t.solutions + " Hub";
+  }
+
+  // You can add more UI elements here as needed
+
+  /* -------------------------
+    Expense & Profit Tracker
+  ------------------------- */
+  let expenses = [];
+  let totalIncome = 0; // you can update this from other modules if needed
+
+  function saveExpense() {
+    const desc = document.getElementById('expDesc').value.trim();
+    const amt = parseFloat(document.getElementById('expAmount').value);
+
+    if (!desc || isNaN(amt)) {
+      alert("Please enter valid description and amount.");
+      return;
+    }
+
+    expenses.push({ desc, amt });
+    document.getElementById('expDesc').value = "";
+    document.getElementById('expAmount').value = "";
+    renderExpenses();
+  }
+
+  function clearExpenses() {
+    expenses = [];
+    renderExpenses();
+  }
+
+  function renderExpenses() {
+    const list = document.getElementById('expenseList');
+    list.innerHTML = "";
+
+    if (expenses.length === 0) {
+      list.innerHTML = "<p class='small'>No expenses added yet.</p>";
+      return;
+    }
+
+    let total = 0;
+    expenses.forEach((e, i) => {
+      total += e.amt;
+      const div = document.createElement('div');
+      div.className = "small";
+      div.style.marginBottom = "6px";
+      div.innerHTML = `${i + 1}. <b>${escapeHtml(e.desc)}</b> — ₹${e.amt.toFixed(2)}`;
+      list.appendChild(div);
+    });
+
+    // show total and profit
+    const summary = document.createElement('div');
+    summary.style.marginTop = "10px";
+    summary.innerHTML = `<b>Total Expenses:</b> ₹${total.toFixed(2)} <br>
+                       <b>Estimated Profit:</b> ₹${(totalIncome - total).toFixed(2)}`;
+    list.appendChild(summary);
+  }
+  // --------------------
+  // Live Weather with Leaflet
+  // --------------------
+  let weatherMap;
+  let weatherMarker;
+
+  // Initialize map
+  function initWeatherMap(lat = 11.25, lon = 75.78) { // default: Kochi, Kerala
+    if (weatherMap) return;
+    weatherMap = L.map('weatherMap').setView([lat, lon], 8);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(weatherMap);
+  }
+
+  // Fetch weather from Open-Meteo
+  async function fetchWeather(lat = 11.25, lon = 75.78) {
+    initWeatherMap(lat, lon);
+
+    const weatherCard = document.getElementById('weatherCard');
+    weatherCard.innerHTML = 'Loading weather...';
+
+    try {
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`);
+      const data = await res.json();
+
+      if (!data.current_weather) {
+        weatherCard.innerText = '⚠️ No weather data available.';
+        return;
+      }
+
+      const w = data.current_weather;
+
+      // Weather info
+      const weatherText = `
+            🌡 Temp: ${w.temperature}°C <br>
+            💨 Windspeed: ${w.windspeed} km/h <br>
+            🌦 Condition: ${w.weathercode} 
+        `;
+      weatherCard.innerHTML = weatherText;
+
+      // Add/Update marker
+      if (weatherMarker) {
+        weatherMarker.setLatLng([lat, lon]).bindPopup(weatherText).openPopup();
+      } else {
+        weatherMarker = L.marker([lat, lon]).addTo(weatherMap).bindPopup(weatherText).openPopup();
+      }
+
+      weatherMap.setView([lat, lon], 8);
+
+    } catch (err) {
+      console.error(err);
+      weatherCard.innerText = 'Error fetching weather.';
+    }
+  }
+
+  // Optional: get user location
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      fetchWeather(pos.coords.latitude, pos.coords.longitude);
+    }, () => {
+      fetchWeather(); // default location if denied
+    });
+  } else {
+    fetchWeather(); // default location
+  }
+
+  async function submitQuery() {
+    const input = document.getElementById('queryText');
+    const question = input.value.trim();
+    if (!question) return;
+
+    const responsesDiv = document.getElementById('queryResponses');
+
+    // Show user question
+    const userDiv = document.createElement('div');
+    userDiv.className = 'user-message';
+    userDiv.innerHTML = `<b>You asked:</b> ${escapeHtml(question)}`;
+    responsesDiv.appendChild(userDiv);
+
+    // Show loading
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'bot-message';
+    loadingDiv.innerText = 'AI is thinking...';
+    responsesDiv.appendChild(loadingDiv);
+
+    input.value = '';
+
+    try {
+      const answer = await callGeminiAPI(question);
+      // Remove loading
+      responsesDiv.removeChild(loadingDiv);
+
+      // Show AI answer
+      const botDiv = document.createElement('div');
+      botDiv.className = 'bot-message';
+      botDiv.innerHTML = `<b>AI:</b> ${escapeHtml(answer)}`;
+      responsesDiv.appendChild(botDiv);
+
+      // Scroll to bottom
+      responsesDiv.scrollTop = responsesDiv.scrollHeight;
+    } catch (e) {
+      loadingDiv.innerText = 'Error contacting AI.';
+      console.error(e);
+    }
+  }
+  // Load community posts from backend and display
+  async function loadCommunity() {
+    const feed = document.getElementById('communityFeed');
+    feed.innerHTML = 'Loading posts...';
+
+    try {
+      const res = await fetch('/community/posts');
+      if (!res.ok) throw new Error('Failed to load posts');
+      const posts = await res.json();
+
+      if (posts.length === 0) {
+        feed.innerHTML = '<p class="small">No posts yet.</p>';
+        return;
+      }
+
+      feed.innerHTML = '';
+      posts.forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'community-post card small';
+        div.style.marginBottom = '8px';
+        div.innerHTML = `
+        <b>${escapeHtml(post.user)}</b> <small style="color:#666;">${new Date(post.timestamp).toLocaleString()}</small>
+        <p>${escapeHtml(post.content)}</p>
+      `;
+        feed.appendChild(div);
+      });
+    } catch (e) {
+      feed.innerHTML = '<p class="small">Error loading posts.</p>';
+      console.error(e);
+    }
+  }
+
+  // Post a new community message
+  async function postCommunity() {
+    const textarea = document.getElementById('communityPost');
+    const content = textarea.value.trim();
+    if (!content) {
+      alert('Please enter a message.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/community/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+
+      if (res.status === 401) {
+        alert('Please sign in to post.');
+        return;
+      }
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to post message.');
+        return;
+      }
+
+      textarea.value = '';
+      loadCommunity(); // Refresh feed
+    } catch (e) {
+      alert('Error posting message.');
+      console.error(e);
+    }
+  }
+
+  // Load community posts initially
+  document.addEventListener('DOMContentLoaded', () => {
+    loadCommunity();
+  });
+  // Initialize dark mode toggle based on saved preference or default
+  const darkModeToggle = document.getElementById('darkModeToggle');
+
+  function applyDarkMode(enabled) {
+    if (enabled) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+    // Save preference
+    localStorage.setItem('darkMode', enabled ? 'true' : 'false');
+  }
+
+  // Load saved preference on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('darkMode');
+    const enabled = saved === 'true';
+    darkModeToggle.checked = enabled;
+    applyDarkMode(enabled);
+  });
+
+  // Listen for toggle changes
+  darkModeToggle.addEventListener('change', (e) => {
+    applyDarkMode(e.target.checked);
+  });
+  
+
+
+</script>
+
+</html>
